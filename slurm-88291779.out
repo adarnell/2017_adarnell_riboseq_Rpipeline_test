@@ -1,0 +1,4 @@
+ModuleCmd_Load.c(200):ERROR:105: Unable to locate a modulefile for 'bio/bowtie-0.12.7'
+ModuleCmd_Load.c(200):ERROR:105: Unable to locate a modulefile for 'hpc/pandas-0.11.0_python-2.7.1'
+ModuleCmd_Load.c(200):ERROR:105: Unable to locate a modulefile for 'hpc/python-2.7.1_full_stack'
+[H[2Jmake: *** No rule to make target `processeddata/test/trim.fq', needed by `trims'.  Stop.

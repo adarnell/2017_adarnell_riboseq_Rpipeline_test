@@ -1,0 +1,96 @@
+# -*- Mode: makefile -*-
+#  SHELL=/bin/bash -x
+#
+#  # sample need to be input from the invocation file. This is done to split each sample to a separate cluster node
+SAMPLE=test
+OUTPUTDIR=$(addprefix processeddata/, $(SAMPLE))
+
+trims: $(addsuffix /trim.fq, $(OUTPUTDIR))
+norrnas: $(addsuffix /norrna.fq, $(OUTPUTDIR))
+rsem_gencode: $(addsuffix /gencode.transcripts.sorted.bam, $(OUTPUTDIR))
+rsem_wiggle: $(addsuffix /gencode.wig, $(OUTPUTDIR))
+codon_ribo_density: $(addsuffix /codon.ribo.density.tsv, $(OUTPUTDIR))
+
+
+PYTHON=/n/sw/fasrcsw/apps/Core/Anaconda/4.3.0-fasrc01/x/bin/python
+CUTADAPT=/n/sw/fasrcsw/apps/Core/cutadapt/1.4.1-fasrc01/bin/cutadapt
+BOWTIE_PATH=/n/sw/fasrcsw/apps/Core/bowtie/1.1.1-fasrc01/bowtie
+BOWTIE=$(addsuffix /bowtie, $(BOWTIE_PATH))
+RSEM_ALIGN=/n/osheafs1/LAB/alicia/bioinformatics/RSEM-1.3.0/rsem-calculate-expression
+RSEM_WIGGLE=/n/osheafs1/LAB/alicia/bioinformatics/RSEM-1.3.0/rsem-bam2wig
+RSCRIPT=/n/sw/fasrcsw/apps/Core/R_core/3.3.3-fasrc01/bin/R
+IGV_TOTDF=/n/osheafs1/LAB/alicia/lib/IGVTools/igvtools toTDF
+IGV_GENOME=/n/osheafs1/LAB/alicia/bioinformatics/genomes/hg38
+RRNA_BOWTIE_INDEX=/n/osheafs1/LAB/alicia/bioinformatics/bowtie_indices/hg38.rrna
+RSEM_CANONICAL_INDEX=/n/osheafs1/LAB/alicia/bioinformatics/bowtie_indices/canonical_ccds_transcripts_20170315_bowtie
+RSEM_GENCODE_INDEX=/n/osheafs1/LAB/alicia/bioinformatics/bowtie_indices/genome_rsem/hg38.gencode.v24.rsem/bowtie
+CUTADAPT_ARGS=--adapter=AAAAAAAAAA --minimum-length=13 --discard-untrimmed
+RRNA_BOWTIE_ARGS=--seedlen=23 --threads=8
+RSEM_ARGS=--num-threads 8 --output-genome-bam --sort-bam-by-coordinate
+
+# add bowtie to path so that tophat can find it
+export PATH
+
+## all: run analysis to generate all final files
+all: trims
+all: norrnas
+all: rsem_gencode
+all: rsem_wiggle
+all: codon_ribo_density
+
+## removetrim: remove trimmed fastq files
+removetrim:
+	rm --force processeddata/*/trim.fq*
+
+## removerrna: remove fq files depleted of rrna contaminants
+removenorrna:
+	rm --force processeddata/*/norrna.fq*
+
+## removersem: remove rsem output files
+removersem:
+	rm -r --force processeddata/*/canonical*
+	rm -r --force processeddata/*/gencode*
+
+## clean: removes all processed data 
+clean: removetrim
+clean: removerrna
+clean: removersem
+
+## help: displays this help
+help: Makefile
+	@sed -n 's/^##//p' $<
+
+# prevents error in case files are named with these keywords
+.PHONY: clean all help
+
+# 5' and 3' trimming
+processeddata/%/trim.fq: rawdata/%.fastq
+	mkdir -p processeddata/$*
+	$(CUTADAPT) $(CUTADAPT_ARGS) --output $@ $< 1> $(addsuffix .log,$@) 2> $(addsuffix .log,$@)
+
+# align against rrna contaminants
+processeddata/%/norrna.fq: processeddata/%/trim.fq
+	$(BOWTIE) \
+	$(RRNA_BOWTIE_ARGS) --un $@ --sam $(RRNA_BOWTIE_INDEX) $< \
+	2>$(addsuffix .log,$@) \
+	> /dev/null
+
+# align norrna reads against gencode transcripts using rsem
+processeddata/%/gencode.transcripts.sorted.bam: processeddata/%/norrna.fq
+	$(RSEM_ALIGN) \
+	$(RSEM_ARGS) --bowtie-path $(BOWTIE_PATH) $< $(RSEM_GENCODE_INDEX) processeddata/$*/gencode \
+	1>processeddata/$*/gencode.log \
+ 	2>processeddata/$*/gencode.log
+
+# generate wiggle and tdf files for IGV visualization
+processeddata/%/gencode.wig: processeddata/%/gencode.genome.sorted.bam
+	$(RSEM_WIGGLE) $< processeddata/$*/gencode.wig $* \
+		1>processeddata/$*/wiggle.log \
+		2>processeddata/$*/wiggle.log															
+	$(IGV_TOTDF) processeddata/$*/gencode.wig processeddata/$*/$* $(IGV_GENOME)
+																							
+# generate wiggle and tdf files for IGV visualization
+processeddata/%/codon.ribo.density.tsv: processeddata/%/gencode.genome.sorted.bam
+	$(RSCRIPT) calculate_codon_ribo_density.R $* \
+		1>processeddata/$*/codondensity.log \
+		2>processeddata/$*/codondensity.log

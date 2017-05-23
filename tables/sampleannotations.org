@@ -1,0 +1,16 @@
+| top                    | bottom             | aa | plotnumber |
+|------------------------+--------------------+----+------------|
+| hct116_arg_3h          | hct116_rich_3h     | R  |          1 |
+| hct116_leu_3h          | hct116_rich_3h     | L  |          1 |
+| hela_arg_mono_3h       | hela_rich_mono_3h  | R  |          1 |
+| hela_leu_mono_3h       | hela_rich_mono_3h  | L  |          1 |
+| 293t_hrgfp_arg_3h      | 293t_hrgfp_rich_3h | R  |          1 |
+| 293t_hrgfp_leu_3h      | 293t_hrgfp_rich_3h | L  |          1 |
+| hrgfp_arg_6h           | hrgfp_rich_6h      | R  |          2 |
+| hrgfp_leu_6h           | hrgfp_rich_6h      | L  |          2 |
+| ragbq99l_arg_6h        | ragbq99l_rich_6h   | R  |          2 |
+| ragbq99l_leu_6h        | ragbq99l_rich_6h   | L  |          2 |
+| gcn2ko_arg_6h          | gcn2ko_rich_6h     | R  |          2 |
+| gcn2ko_leu_6h          | gcn2ko_rich_6h     | L  |          2 |
+| 293t_hrgfp_argtorin_3h | 293t_hrgfp_rich_3h | R  |          3 |
+| 293t_hrgfp_leutorin_3h | 293t_hrgfp_rich_3h | L  |          3 |
